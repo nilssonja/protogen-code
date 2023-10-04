@@ -36,7 +36,7 @@
 // You can activate features like visor detection and sound detection by
 // deleting the 2 slashes before the features in the lines below, this will uncomment them.
 //#define VisorSensor
-// #define BoopSensor
+#define BoopSensor
 #define Microphone
 
 const int pinCS = 8; // Din = pin 11   CLK = pin 13
@@ -47,7 +47,7 @@ Max72xxPanel matrix = Max72xxPanel(pinCS, numberOfHorizontalDisplays, numberOfVe
 
 /////////////////////////// Expressions \\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-int expressions = 4; // Here you can change the amount of expressions you want to use
+int expressions = 6; // Here you can change the amount of expressions you want to use
 
 /////////////////////////// I/O Pins \\\\\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -80,7 +80,7 @@ volatile unsigned long debounceTime = 0;
 volatile unsigned long debounceTime2 = 0;
 volatile unsigned long debounceTime3 = 0;
 volatile unsigned long previousMillis = 0;
-
+volatile unsigned long debounceTimeMic = 0;
 
 bool visorState = 0;
 bool micState = 0;
@@ -106,7 +106,7 @@ bool blinkState = 0;
 
 
 //Smoothing Microphone
-int sensitivity = 65; // Change this value if your microphone is too sensitive, or not sensitive enough
+int sensitivity = 170; // Change this value if your microphone is too sensitive, or not sensitive enough WAS 65
 const int numReadings = 10;
 int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
@@ -128,25 +128,65 @@ double vImag[samples];
 #define SCL_FREQUENCY 0x02
 #define SCL_PLOT 0x03
 
-///////////////////////////Setup runs once\\\\\\\\\\\\\\\\\\\\\\\\\\\
+///////////////////////////Setup runs once\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 void setup() {
   Serial.begin(9600);
-  matrix.setIntensity(1);                   //If some of your icons are turned upside down, try
-  matrix.setRotation(0, 1); // Right eye    //changing the second number Like 1, 2 or 3.
-  matrix.setRotation(1, 1); // Right eye
-  matrix.setRotation(2, 1); // Right mouth
-  matrix.setRotation(3, 1); // Right mouth
-  matrix.setRotation(4, 1); // Right mouth
-  matrix.setRotation(5, 1); // Right mouth
-  matrix.setRotation(6, 1); // Right nose
-  matrix.setRotation(7, 1); // Left nose
-  matrix.setRotation(8, 1); // Left mouth
-  matrix.setRotation(9, 1); // Left mouth
-  matrix.setRotation(10, 1); // Left mouth
-  matrix.setRotation(11, 1); // Left mouth
-  matrix.setRotation(12, 1); // Left eye
-  matrix.setRotation(13, 1); // Left eye
+  horizontalFlip(nose, 8);
+  horizontalFlip(noseL, 8);
+  horizontalFlip(FBnose, 8);
+  horizontalFlip(FBnoseL, 8);
+  horizontalFlip(Eye, 16);
+  horizontalFlip(EyeL,16);
+  horizontalFlip(Angry, 16);
+  horizontalFlip(AngryL, 16);
+  horizontalFlip(Spooked, 16);
+  horizontalFlip(SpookedL, 16);
+  horizontalFlip(vwv, 16);
+  horizontalFlip(vwvL, 16);
+  horizontalFlip(FBEyeBasicL, 16);
+  horizontalFlip(FBEyeBasic, 16);
+  horizontalFlip(FBEyeLoveL, 16);
+  horizontalFlip(FBEyeLove, 16);
+  horizontalFlip(FBEyeGlitchL, 16);
+  horizontalFlip(FBEyeGlitch, 16);
+  horizontalFlip(maw, 32);
+  horizontalFlip(mawL, 32);
+  horizontalFlip(FBMouthBasicL, 32);
+  horizontalFlip(FBMouthBasicLSoft, 32);
+  horizontalFlip(FBMouthBasicLMedium, 32);
+  horizontalFlip(FBMouthBasicLLoud, 32);
+  horizontalFlip(FBMouthBasic, 32);
+  horizontalFlip(FBMouthLoveL, 32);
+  horizontalFlip(FBMouthLove, 32);
+  horizontalFlip(mawSpeakS, 32);
+  horizontalFlip(mawSpeakM, 32);
+  horizontalFlip(mawSpeakSL, 32);
+  horizontalFlip(mawSpeakML, 32);
+  horizontalFlip(mawSpeakL, 32);
+  horizontalFlip(mawSpeakLL, 32);
+  horizontalFlip(Glitch1, 32);
+  horizontalFlip(Glitch1L, 32);
+
+  horizontalFlip(Glitch2, 32);
+  horizontalFlip(Glitch2L, 32);
+
+
+  matrix.setIntensity(3);                   //If some of your icons are turned upside down, try
+  matrix.setRotation(0, 3); // Right eye    //changing the second number Like 1, 2 or 3.
+  matrix.setRotation(1, 3); // Right eye
+  matrix.setRotation(2, 3); // Right mouth
+  matrix.setRotation(3, 3); // Right mouth
+  matrix.setRotation(4, 3); // Right mouth
+  matrix.setRotation(5, 3); // Right mouth
+  matrix.setRotation(6, 3); // Right nose
+  matrix.setRotation(7, 3); // Left nose
+  matrix.setRotation(8, 3); // Left mouth
+  matrix.setRotation(9, 3); // Left mouth
+  matrix.setRotation(10, 3); // Left mouth
+  matrix.setRotation(11, 3); // Left mouth
+  matrix.setRotation(12, 3); // Left eye
+  matrix.setRotation(13, 3); // Left eye
   matrix.fillScreen(LOW);
 
   expressions--;
@@ -180,8 +220,8 @@ void setup() {
 
 void loop() {
   if ((digitalRead(VisorPin) == 0) || (visorState == 0)) {
-    // Serial.println(analogRead(irPin));
     // Serial.println(analogRead(micPin));
+    // Serial.println(micState);
     if ((analogRead(irPin) > 500)||(boopDisabled == 1)) { //Change the '>' to '<' if the boop detection works the wrong way round
       boopState = 0;
       boopTimer = 1;
@@ -194,14 +234,15 @@ void loop() {
       boopTime = millis();
       if (rising == 1) {
         matrix.fillScreen(LOW);
-        matrix.drawBitmap(MawLeft, 0, mawL, 32, 8, HIGH);
-        matrix.drawBitmap(NoseLeft, 0, noseL, 8, 8, HIGH);
-        matrix.drawBitmap(NoseRight, 0, nose, 8, 8, HIGH);
-        matrix.drawBitmap(MawRight, 0, maw, 32, 8, HIGH);
+        
         switch (state) {
           case 0:                             //First button press: Happy expression
               matrix.drawBitmap(EyeLeft, 0, EyeL, 16, 8, HIGH);
               matrix.drawBitmap(EyeRight, 0, Eye, 16, 8, HIGH);
+              matrix.drawBitmap(MawLeft, 0, mawL, 32, 8, HIGH);
+              matrix.drawBitmap(NoseLeft, 0, noseL, 8, 8, HIGH);
+              matrix.drawBitmap(NoseRight, 0, nose, 8, 8, HIGH);
+              matrix.drawBitmap(MawRight, 0, maw, 32, 8, HIGH);
               rising = 0;
             if (blinkState == 0) {
               setColor(0, 8, 0);               //Makes the colour of the rgb LED green
@@ -212,6 +253,10 @@ void loop() {
           case 1:                             //Second button press: Surprised
               matrix.drawBitmap(EyeLeft, 0, SpookedL, 16, 8, HIGH);
               matrix.drawBitmap(EyeRight, 0, Spooked, 16, 8, HIGH);
+              matrix.drawBitmap(MawLeft, 0, mawL, 32, 8, HIGH);
+              matrix.drawBitmap(NoseLeft, 0, FBnoseL, 8, 8, HIGH);
+              matrix.drawBitmap(NoseRight, 0, FBnose, 8, 8, HIGH);
+              matrix.drawBitmap(MawRight, 0, maw, 32, 8, HIGH);
               rising = 0;
             if (blinkState == 0) {
               setColor(0, 0, 8);                //Makes the colour of the LED blue
@@ -222,6 +267,10 @@ void loop() {
           case 2:                             //Third button press: Angry expression
               matrix.drawBitmap(EyeLeft, 0, AngryL, 16, 8, HIGH);
               matrix.drawBitmap(EyeRight, 0, Angry, 16, 8, HIGH);
+              matrix.drawBitmap(MawLeft, 0, mawL, 32, 8, HIGH);
+              matrix.drawBitmap(NoseLeft, 0, FBnoseL, 8, 8, HIGH);
+              matrix.drawBitmap(NoseRight, 0, FBnose, 8, 8, HIGH);
+              matrix.drawBitmap(MawRight, 0, maw, 32, 8, HIGH);
               rising = 0;
             if (blinkState == 0) {
               setColor(8, 0, 0);               //Makes the colour of the LED red
@@ -232,9 +281,39 @@ void loop() {
           case 3:
               matrix.drawBitmap(EyeLeft, 0, vwvL, 16, 8, HIGH);
               matrix.drawBitmap(EyeRight, 0, vwv, 16, 8, HIGH);
+              matrix.drawBitmap(MawLeft, 0, mawL, 32, 8, HIGH);
+              matrix.drawBitmap(NoseLeft, 0, FBnoseL, 8, 8, HIGH);
+              matrix.drawBitmap(NoseRight, 0, FBnose, 8, 8, HIGH);
+              matrix.drawBitmap(MawRight, 0, maw, 32, 8, HIGH);
               rising = 0;
             if (blinkState == 0) {
               setColor(4, 0, 4);                //Makes the colour of the LED orange
+            }
+            previousMillis = millis();
+            break;
+          case 4:
+              matrix.drawBitmap(EyeLeft, 0, FBEyeBasicL, 16, 8, HIGH);
+              matrix.drawBitmap(EyeRight, 0, FBEyeBasic, 16, 8, HIGH);
+              matrix.drawBitmap(MawLeft, 0, FBMouthBasicL, 32, 8, HIGH);
+              matrix.drawBitmap(NoseLeft, 0, FBnoseL, 8, 8, HIGH);
+              matrix.drawBitmap(NoseRight, 0, FBnose, 8, 8, HIGH);
+              matrix.drawBitmap(MawRight, 0, FBMouthBasic, 32, 8, HIGH);
+              rising = 0;
+            if (blinkState == 0) {
+              setColor(4, 0, 4);
+            }
+            previousMillis = millis();
+            break;
+          case 5:
+              matrix.drawBitmap(EyeLeft, 0, FBEyeLoveL, 16, 8, HIGH);
+              matrix.drawBitmap(EyeRight, 0, FBEyeLove, 16, 8, HIGH);
+              matrix.drawBitmap(MawLeft, 0, FBMouthLoveL, 32, 8, HIGH);
+              matrix.drawBitmap(NoseLeft, 0, FBnoseL, 8, 8, HIGH);
+              matrix.drawBitmap(NoseRight, 0, FBnose, 8, 8, HIGH);
+              matrix.drawBitmap(MawRight, 0, FBMouthLove, 32, 8, HIGH);
+              rising = 0;
+            if (blinkState == 0) {
+              setColor(4, 0, 4);
             }
             previousMillis = millis();
             break;
@@ -243,7 +322,6 @@ void loop() {
       }
       glitch();
       Blink();
-      microphone();
       matrix.write();
       if (millis() - previousMillis >= ledTime) {
         setColor(0, 0, 0);
@@ -267,6 +345,14 @@ void loop() {
         boopTimer = 0;
       }
     }
+    switch(state) {
+        case 0:
+          microphone();
+          break;
+        case 4:
+          microphone();
+          break;
+      }
     matrix.write();
   }
   else {
@@ -274,6 +360,18 @@ void loop() {
     matrix.write();
   }
 }
+
+void horizontalFlip(uint8_t data[], int length) {
+    for (int i = 0; i < length; i++) {
+        uint8_t originalByte = data[i];
+        uint8_t flippedByte = 0;
+        for (int j = 0; j < 8; j++) {
+            flippedByte |= ((originalByte >> j) & 0x01) << (7 - j);
+        }
+        data[i] = flippedByte;
+    }
+}
+
 
 ///////////////////////////Button interrupt\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -288,6 +386,18 @@ void ISR_button() {                               //Stuff you shouldn't touch :P
     rising = 1;
     debounceTime = millis();
   }
+  // if((millis() - debounceTimeMic) < 200) {
+  //   Serial.println("swapping mic state from");
+  //   Serial.println(micState);
+  //   if (micState == 1) {
+  //     micState = 0;
+  //   } else {
+  //     micState = 1;
+  //   }
+  //   Serial.println("new mic state:");
+  //   Serial.println(micState);
+  // }
+  // debounceTimeMic = millis();
 }
 
 ///////////////////////////LED\\\\\\\\\\\\\\\\\\\\\\\\\\\

@@ -21,6 +21,13 @@ void writeExpres() {
       matrix.drawBitmap(EyeLeft, 0, vwvL, 16, 8, HIGH);
       matrix.drawBitmap(EyeRight, 0, vwv, 16, 8, HIGH);
       break;
+    case 4:
+      matrix.drawBitmap(EyeLeft, 0, FBEyeBasicL, 16, 8, HIGH);
+      matrix.drawBitmap(EyeRight, 0, FBEyeBasic, 16, 8, HIGH);
+      break;
+    case 5:
+      matrix.drawBitmap(EyeLeft, 0, FBEyeLoveL, 16, 8, HIGH);
+      matrix.drawBitmap(EyeRight, 0, FBEyeLove, 16, 8, HIGH);
   }
   rising = 0;
 }

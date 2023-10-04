@@ -8,7 +8,9 @@ void Blink() {
         matrix.fillRect(EyeRight, -8 + Step, 16, 8, LOW);
         matrix.fillRect(EyeLeft, -8 + Step, 16, 8, LOW);
         matrix.write();
-        microphone();
+        if(state == 0) {
+          microphone();
+        }
       }
       else if (Step >= 8) {
         Step++;
@@ -16,7 +18,9 @@ void Blink() {
         matrix.fillRect(EyeRight, (Step - 8) * -1, 16, 8, LOW);
         matrix.fillRect(EyeLeft, (Step - 8) * -1, 16, 8, LOW);
         matrix.write();
-        microphone();
+        if(state == 0) {
+          microphone();
+        }
       }
       if (Step == 16) {
         Step = 0;
